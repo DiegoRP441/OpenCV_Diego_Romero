@@ -1,0 +1,48 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: #0f1220; color: #eaeef6;
+}
+
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #1c2640; background: #12162a; }
+.app-header h1 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
+
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tab-btn { background: #1b2a41; color: #cfe3ff; border: 1px solid #2a3d5f; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.tab-btn.active { background: #35568f; border-color: #4674c5; }
+.tab-btn:hover { filter: brightness(1.1); }
+
+.toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #12162a; border-bottom: 1px solid #1c2640; }
+.inputs { display: flex; gap: 10px; align-items: center; }
+.file-picker { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.file-picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.file-picker span { background: #1b2a41; border: 1px solid #2a3d5f; padding: 8px 10px; border-radius: 8px; }
+#webcamToggle { background: #1b2a41; border: 1px solid #2a3d5f; padding: 8px 10px; border-radius: 8px; color: #cfe3ff; cursor: pointer; }
+#webcamToggle:hover { filter: brightness(1.1); }
+
+.status { color: #88a4c8; }
+
+.workspace { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px; }
+.controls { background: #0f1427; border: 1px solid #1c2640; border-radius: 12px; padding: 12px; max-height: calc(100vh - 160px); overflow: auto; }
+.controls h3 { margin: 8px 0 12px; font-size: 14px; color: #a6c6ff; }
+.controls label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; }
+.controls input[type="range"], .controls select, .controls input[type="number"] { width: 50%; }
+.controls .note { font-size: 12px; color: #7a8aaa; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.canvases { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.canvas-wrap { background: #0f1427; border: 1px solid #1c2640; border-radius: 12px; padding: 10px; }
+.canvas-wrap h3 { margin: 4px 0 8px; font-size: 14px; color: #a6c6ff; }
+canvas, video { width: 100%; height: auto; border-radius: 8px; background: #0a0d1a; }
+.hidden { display: none; }
+
+.app-footer { padding: 12px 16px; border-top: 1px solid #1c2640; background: #12162a; display: flex; gap: 12px; align-items: center; }
+.app-footer a { color: #7ab6ff; }
+
+@media (max-width: 1024px) {
+  .workspace { grid-template-columns: 1fr; }
+  .canvases { grid-template-columns: 1fr; }
+}

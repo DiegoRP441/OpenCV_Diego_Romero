@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenCV Showcase</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>OpenCV Showcase</h1>
+    <nav class="tabs">
+      <button class="tab-btn active" data-mode="filters">Filtros</button>
+      <button class="tab-btn" data-mode="edges">Bordes</button>
+      <button class="tab-btn" data-mode="threshold">Umbrales</button>
+      <button class="tab-btn" data-mode="morph">Morfología</button>
+      <button class="tab-btn" data-mode="contours">Contornos</button>
+      <button class="tab-btn" data-mode="hough">Hough</button>
+      <button class="tab-btn" data-mode="features">Features</button>
+      <button class="tab-btn" data-mode="color">Color HSV</button>
+      <button class="tab-btn" data-mode="perspective">Perspectiva</button>
+      <button class="tab-btn" data-mode="template">Template</button>
+      <button class="tab-btn" data-mode="objects">Objetos</button>
+      <button class="tab-btn" data-mode="faces">Caras</button>
+      <button class="tab-btn" data-mode="keyboard">Teclado</button>
+    </nav>
+  </header>
+
+  <section class="toolbar">
+    <div class="inputs">
+      <label class="file-picker">
+        <input type="file" id="imageInput" accept="image/*" />
+        <span>Subir imagen</span>
+      </label>
+      <button id="webcamToggle">Activar webcam</button>
+    </div>
+    <div class="status">
+      <span id="cvStatus">OpenCV: cargando...</span>
+    </div>
+  </section>
+
+  <main class="workspace">
+    <aside class="controls">
+      <div id="panel-filters" class="panel active">
+        <h3>Filtros</h3>
+        <label>
+          <span>Gris</span>
+          <input type="checkbox" id="fltGray" checked />
+        </label>
+        <label>
+          <span>Gaussian Blur</span>
+          <input type="range" id="fltGauss" min="0" max="15" step="1" value="3" />
+        </label>
+        <label>
+          <span>Median Blur</span>
+          <input type="range" id="fltMedian" min="0" max="15" step="1" value="0" />
+        </label>
+        <label>
+          <span>Bilateral</span>
+          <input type="range" id="fltBilateral" min="0" max="20" step="1" value="0" />
+        </label>
+        <label>
+          <span>CLAHE</span>
+          <input type="checkbox" id="fltClahe" />
+        </label>
+      </div>
+
+      <div id="panel-edges" class="panel">
+        <h3>Bordes (Canny)</h3>
+        <label>
+          <span>Threshold 1</span>
+          <input type="range" id="edgeT1" min="0" max="300" step="1" value="80" />
+        </label>
+        <label>
+          <span>Threshold 2</span>
+          <input type="range" id="edgeT2" min="0" max="300" step="1" value="160" />
+        </label>
+      </div>
+
+      <div id="panel-threshold" class="panel">
+        <h3>Umbrales</h3>
+        <label>
+          <span>Tipo</span>
+          <select id="thrType">
+            <option value="binary">BINARIO</option>
+            <option value="binary_inv">BINARIO_INV</option>
+            <option value="trunc">TRUNC</option>
+            <option value="tozero">TOZERO</option>
+            <option value="tozero_inv">TOZERO_INV</option>
+            <option value="adaptive_mean">ADAPTIVE_MEAN</option>
+            <option value="adaptive_gaussian">ADAPTIVE_GAUSSIAN</option>
+          </select>
+        </label>
+        <label>
+          <span>Umbral</span>
+          <input type="range" id="thrVal" min="0" max="255" step="1" value="128" />
+        </label>
+        <label>
+          <span>Bloque</span>
+          <input type="range" id="thrBlock" min="3" max="31" step="2" value="11" />
+        </label>
+        <label>
+          <span>Constante C</span>
+          <input type="range" id="thrC" min="-10" max="10" step="1" value="2" />
+        </label>
+      </div>
+
+      <div id="panel-morph" class="panel">
+        <h3>Morfología</h3>
+        <label>
+          <span>Operación</span>
+          <select id="morphOp">
+            <option value="erode">Erode</option>
+            <option value="dilate">Dilate</option>
+            <option value="open">Open</option>
+            <option value="close">Close</option>
+          </select>
+        </label>
+        <label>
+          <span>Tamaño kernel</span>
+          <input type="range" id="morphK" min="1" max="25" step="2" value="5" />
+        </label>
+        <label>
+          <span>Iteraciones</span>
+          <input type="range" id="morphIter" min="1" max="5" step="1" value="1" />
+        </label>
+      </div>
+
+      <div id="panel-contours" class="panel">
+        <h3>Contornos</h3>
+        <label>
+          <span>Min área</span>
+          <input type="range" id="cntMinArea" min="0" max="5000" step="10" value="200" />
+        </label>
+        <label>
+          <span>Umbral binario</span>
+          <input type="range" id="cntThr" min="0" max="255" step="1" value="120" />
+        </label>
+      </div>
+
+      <div id="panel-hough" class="panel">
+        <h3>Hough</h3>
+        <label>
+          <span>Detectar</span>
+          <select id="houghMode">
+            <option value="lines">Líneas (P)</option>
+            <option value="circles">Círculos</option>
+          </select>
+        </label>
+        <label>
+          <span>Parámetro principal</span>
+          <input type="range" id="houghP1" min="1" max="200" step="1" value="100" />
+        </label>
+        <label>
+          <span>Parámetro secundario</span>
+          <input type="range" id="houghP2" min="1" max="200" step="1" value="50" />
+        </label>
+      </div>
+
+      <div id="panel-features" class="panel">
+        <h3>Características (ORB)</h3>
+        <label>
+          <span>Máx. puntos</span>
+          <input type="range" id="featMax" min="0" max="1000" step="50" value="500" />
+        </label>
+      </div>
+
+      <div id="panel-color" class="panel">
+        <h3>Máscara por color (HSV)</h3>
+        <label><span>H min</span><input type="range" id="hMin" min="0" max="179" value="20" /></label>
+        <label><span>H max</span><input type="range" id="hMax" min="0" max="179" value="40" /></label>
+        <label><span>S min</span><input type="range" id="sMin" min="0" max="255" value="50" /></label>
+        <label><span>S max</span><input type="range" id="sMax" min="0" max="255" value="255" /></label>
+        <label><span>V min</span><input type="range" id="vMin" min="0" max="255" value="50" /></label>
+        <label><span>V max</span><input type="range" id="vMax" min="0" max="255" value="255" /></label>
+      </div>
+
+      <div id="panel-perspective" class="panel">
+        <h3>Transformación de Perspectiva</h3>
+        <p>Haz clic en 4 puntos sobre la imagen.</p>
+        <label>
+          <span>Ancho destino</span>
+          <input type="number" id="perspW" min="50" value="400" />
+        </label>
+        <label>
+          <span>Alto destino</span>
+          <input type="number" id="perspH" min="50" value="300" />
+        </label>
+        <button id="perspReset">Reset puntos</button>
+      </div>
+
+      <div id="panel-template" class="panel">
+        <h3>Template Matching</h3>
+        <label class="file-picker">
+          <input type="file" id="templateInput" accept="image/*" />
+          <span>Subir template</span>
+        </label>
+        <label>
+          <span>Método</span>
+          <select id="tmplMethod">
+            <option value="0">SQDIFF</option>
+            <option value="1">SQDIFF_NORMED</option>
+            <option value="2">TM_CCORR</option>
+            <option value="3">TM_CCORR_NORMED</option>
+            <option value="4">TM_CCOEFF</option>
+            <option value="5">TM_CCOEFF_NORMED</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="panel-objects" class="panel">
+        <h3>Detección de Objetos (MobileNet-SSD)</h3>
+        <button id="objectsLoad">Cargar modelo</button>
+        <label>
+          <span>Motor</span>
+          <select id="objEngine">
+            <option value="dnn">OpenCV DNN</option>
+            <option value="tfjs">TF.js COCO-SSD</option>
+          </select>
+        </label>
+        <label>
+          <span>Confianza mínima</span>
+          <input type="range" id="objConf" min="0" max="100" step="1" value="50" />
+        </label>
+        <p class="note">Se descarga prototxt y caffemodel desde repositorios públicos. Si no cargas, se usa HOG para personas o COCO-SSD.</p>
+      </div>
+
+      <div id="panel-faces" class="panel">
+        <h3>Detección de Caras (Haar)</h3>
+        <button id="facesLoad">Cargar cascade</button>
+        <p class="note">Se descarga desde el repositorio oficial de OpenCV.</p>
+      </div>
+
+      <div id="panel-keyboard" class="panel">
+        <h3>Teclado por Mano</h3>
+        <p class="note">Usa pinza pulgar-índice para pulsar la tecla resaltada.</p>
+        <label>
+          <span>Texto</span>
+          <textarea id="kbdText" rows="3" placeholder="Escribe con la mano..."></textarea>
+        </label>
+      </div>
+    </aside>
+
+    <section class="canvases">
+      <div class="canvas-wrap">
+        <h3>Entrada</h3>
+        <video id="video" playsinline class="hidden"></video>
+        <canvas id="inputCanvas" width="640" height="480"></canvas>
+      </div>
+      <div class="canvas-wrap">
+        <h3>Salida</h3>
+        <canvas id="outputCanvas" width="640" height="480"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>Hecho con OpenCV.js</span>
+    <a href="https://docs.opencv.org/" target="_blank" rel="noopener">Docs</a>
+  </footer>
+
+  <script src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
