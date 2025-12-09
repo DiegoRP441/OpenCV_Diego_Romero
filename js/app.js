@@ -54,7 +54,7 @@
   (async () => { try { await logger.flush(); } catch {} })();
 
   const state = {
-    mode: 'filters',
+    mode: 'faces',
     points: [],
     webcamOn: false,
     stream: null,
@@ -344,44 +344,17 @@
 
     try {
       switch (state.mode) {
-        case 'filters':
-          dst = applyFilters(src);
-          break;
-        case 'edges':
-          dst = applyEdges(src);
+        case 'faces':
+          dst = detectFaces(src);
           break;
         case 'threshold':
           dst = applyThreshold(src);
           break;
-        case 'morph':
-          dst = applyMorph(src);
-          break;
         case 'contours':
           dst = drawContours(src);
           break;
-        case 'hough':
-          dst = applyHough(src);
-          break;
-        case 'features':
-          dst = drawFeatures(src);
-          break;
-        case 'color':
-          dst = maskHSV(src);
-          break;
-        case 'perspective':
-          dst = warpPerspective(src);
-          break;
-        case 'template':
-          dst = templateMatch(src);
-          break;
-        case 'objects':
-          dst = detectObjects(src);
-          break;
-        case 'faces':
-          dst = detectFaces(src);
-          break;
-        case 'keyboard':
-          dst = drawKeyboard(src);
+        case 'edges':
+          dst = applyEdges(src);
           break;
         default:
           dst = src.clone();
