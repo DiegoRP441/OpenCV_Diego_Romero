@@ -35,6 +35,24 @@
     return { log, flush };
   })();
 
+  // Simple session id for visit tracking
+  const sessionId = (() => {
+    const key = 'session_id_v1';
+    let id = sessionStorage.getItem(key);
+    if (!id) {
+      const arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      id = Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+      sessionStorage.setItem(key, id);
+    }
+    return id;
+  })();
+
+  // Registrar entrada de sesión
+  logger.log('app_enter', { sessionId, ts: Date.now(), ref: document.referrer || '', tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown' });
+  // Enviar de inmediato en el primer load
+  (async () => { try { await logger.flush(); } catch {} })();
+
   const state = {
     mode: 'filters',
     points: [],
@@ -68,10 +86,12 @@
     handDetInterval: 100,
     handLastDet: 0,
     handPending: false,
+    faceCountTotal: 0,
   };
 
   const els = {
     cvStatus: document.getElementById('cvStatus'),
+    faceCount: document.getElementById('faceCount'),
     tabs: Array.from(document.querySelectorAll('.tab-btn')),
     panels: Array.from(document.querySelectorAll('.panel')),
     imageInput: document.getElementById('imageInput'),
@@ -595,9 +615,16 @@
     let gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     let faces = new cv.RectVector(); let numDetections = new cv.IntVector();
     state.classifier.detectMultiScale(gray, faces, 1.1, 3, 0, new cv.Size(30, 30), new cv.Size());
-    for (let i = 0; i < faces.size(); i++) {
+    const count = faces.size();
+    for (let i = 0; i < count; i++) {
       const face = faces.get(i);
       cv.rectangle(out, new cv.Point(face.x, face.y), new cv.Point(face.x + face.width, face.y + face.height), new cv.Scalar(255, 0, 0, 255), 2);
+    }
+    // actualizar contador total y UI
+    if (count > 0) {
+      state.faceCountTotal += count;
+      if (els.faceCount) els.faceCount.textContent = 'Personas: ' + state.faceCountTotal;
+      logger.log('faces_detected', { count, total: state.faceCountTotal });
     }
     gray.delete(); faces.delete(); numDetections.delete();
     return out;
