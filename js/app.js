@@ -87,6 +87,12 @@
     handLastDet: 0,
     handPending: false,
     faceCountTotal: 0,
+    faceTracks: [],
+    faceNextId: 1,
+    faceTrackTTL: 1000,
+    faceMatchDist: 50,
+    faceConfirmFrames: 2,
+    frameIndex: 0,
   };
 
   const els = {
@@ -339,6 +345,7 @@
   // Core processing
   function processFrame() {
     if (!window.cv || !cv.Mat) return;
+    state.frameIndex++;
     let src = cv.imread(els.inCanvas);
     let dst = new cv.Mat();
 
@@ -589,16 +596,52 @@
     let faces = new cv.RectVector(); let numDetections = new cv.IntVector();
     state.classifier.detectMultiScale(gray, faces, 1.1, 3, 0, new cv.Size(30, 30), new cv.Size());
     const count = faces.size();
+
+    // dibujar y preparar detecciones
+    const now = Date.now();
+    const dets = [];
     for (let i = 0; i < count; i++) {
-      const face = faces.get(i);
-      cv.rectangle(out, new cv.Point(face.x, face.y), new cv.Point(face.x + face.width, face.y + face.height), new cv.Scalar(255, 0, 0, 255), 2);
+      const f = faces.get(i);
+      cv.rectangle(out, new cv.Point(f.x, f.y), new cv.Point(f.x + f.width, f.y + f.height), new cv.Scalar(255, 0, 0, 255), 2);
+      dets.push({ x: f.x, y: f.y, w: f.width, h: f.height, cx: f.x + f.width / 2, cy: f.y + f.height / 2 });
     }
-    // actualizar contador total y UI
-    if (count > 0) {
-      state.faceCountTotal += count;
+
+    // limpiar tracks antiguos
+    state.faceTracks = state.faceTracks.filter(t => (now - t.lastTs) <= state.faceTrackTTL);
+
+    // asociar detecciones a tracks existentes por distancia
+    let newFaces = 0;
+    for (const d of dets) {
+      let best = null; let bestDist = Infinity;
+      for (const t of state.faceTracks) {
+        const dx = d.cx - (t.x + t.w / 2);
+        const dy = d.cy - (t.y + t.h / 2);
+        const dist = Math.hypot(dx, dy);
+        if (dist < bestDist && dist <= state.faceMatchDist) { best = t; bestDist = dist; }
+      }
+      if (best) {
+        // actualizar track existente
+        best.x = d.x; best.y = d.y; best.w = d.w; best.h = d.h;
+        best.lastTs = now; best.lastFrame = state.frameIndex;
+        best.confirm = Math.min((best.confirm || 1) + 1, 10);
+        if (!best.counted && best.confirm >= state.faceConfirmFrames) {
+          best.counted = true; newFaces++;
+        }
+      } else {
+        // crear nuevo track
+        const t = { id: state.faceNextId++, x: d.x, y: d.y, w: d.w, h: d.h, lastTs: now, lastFrame: state.frameIndex, confirm: 1, counted: (state.faceConfirmFrames <= 1) };
+        state.faceTracks.push(t);
+        if (t.counted) newFaces++;
+      }
+    }
+
+    // actualizar contador total y UI solo con nuevas caras
+    if (newFaces > 0) {
+      state.faceCountTotal += newFaces;
       if (els.faceCount) els.faceCount.textContent = 'Personas: ' + state.faceCountTotal;
-      logger.log('faces_detected', { count, total: state.faceCountTotal });
+      logger.log('faces_detected', { count, new: newFaces, total: state.faceCountTotal });
     }
+
     gray.delete(); faces.delete(); numDetections.delete();
     return out;
   }
