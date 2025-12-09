@@ -1,4 +1,40 @@
 (() => {
+  // Lightweight client logger: buffers in localStorage and sends to /api/log
+  const logger = (() => {
+    const key = 'logger_buffer_v1';
+    const load = () => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+    const save = (buf) => { try { localStorage.setItem(key, JSON.stringify(buf)); } catch {} };
+    const post = async (events) => {
+      try {
+        await fetch('/api/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events, context: { ua: navigator.userAgent } })
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    let buffer = load();
+    const log = (type, data = {}) => {
+      const evt = { type, data, ts: Date.now() };
+      buffer.push(evt); save(buffer);
+    };
+    const flush = async () => {
+      if (!buffer.length) return;
+      const toSend = buffer.slice();
+      const ok = await post(toSend);
+      if (ok) { buffer = []; save(buffer); }
+      return ok;
+    };
+    setInterval(flush, 5000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+    window.addEventListener('error', (e) => log('error', { message: e.message, stack: e.error?.stack }));
+    window.addEventListener('unhandledrejection', (e) => log('unhandledrejection', { reason: String(e.reason) }));
+    return { log, flush };
+  })();
+
   const state = {
     mode: 'filters',
     points: [],
@@ -152,8 +188,10 @@
         await els.video.play();
         els.video.classList.remove('hidden');
         state.webcamOn = true;
+        logger.log('webcam_on');
         loop();
       } catch (err) {
+        logger.log('webcam_error', { message: err.message });
         alert('No se pudo activar la webcam: ' + err.message);
       }
     } else {
@@ -164,6 +202,7 @@
       state.stream = null;
       els.video.classList.add('hidden');
       state.webcamOn = false;
+      logger.log('webcam_off');
     }
   });
 
@@ -191,7 +230,10 @@
   });
 
   // OpenCV init status
-  const setCvStatus = (msg) => els.cvStatus.textContent = 'OpenCV: ' + msg;
+  const setCvStatus = (msg) => {
+    els.cvStatus.textContent = 'OpenCV: ' + msg;
+    logger.log('opencv_status', { msg });
+  };
 
   // Load Haar cascade
   els.facesLoad.addEventListener('click', async () => {
