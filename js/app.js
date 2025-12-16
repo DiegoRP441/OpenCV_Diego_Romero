@@ -53,6 +53,46 @@
   // Enviar de inmediato en el primer load
   (async () => { try { await logger.flush(); } catch {} })();
 
+  // Historial de comunicación en localStorage y UI
+  (function initCommLog() {
+    const key = 'comm_log_v1';
+    const load = () => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+    const save = (arr) => { try { localStorage.setItem(key, JSON.stringify(arr)); } catch {} };
+    const fmtTime = (ts) => {
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return `${hh}:${mm}:${ss}`;
+    };
+    const updateUI = () => {
+      const arr = load();
+      if (els.commStatus) {
+        if (arr.length) {
+          const last = arr[arr.length - 1];
+          els.commStatus.textContent = `Conexión: OK ${fmtTime(last.ts)} (${last.count} evts)`;
+        } else {
+          els.commStatus.textContent = 'Conexión: -';
+        }
+      }
+    };
+    // parchear flush para registrar resultado
+    const origFlush = logger.flush;
+    logger.flush = async () => {
+      const before = JSON.parse(localStorage.getItem('logger_buffer_v1') || '[]');
+      const ok = await origFlush();
+      const arr = load();
+      if (ok) {
+        arr.push({ ts: Date.now(), count: before.length });
+        while (arr.length > 50) arr.shift();
+        save(arr);
+      }
+      updateUI();
+      return ok;
+    };
+    // actualizar UI al inicio
+    updateUI();
+  })();
   const state = {
     mode: 'faces',
     points: [],
@@ -98,6 +138,7 @@
   const els = {
     cvStatus: document.getElementById('cvStatus'),
     faceCount: document.getElementById('faceCount'),
+    commStatus: document.getElementById('commStatus'),
     tabs: Array.from(document.querySelectorAll('.tab-btn')),
     panels: Array.from(document.querySelectorAll('.panel')),
     imageInput: document.getElementById('imageInput'),
